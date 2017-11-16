@@ -57,18 +57,18 @@
 	
 	$byrev_gtfo_hotlink_post_data = "";	
 	
-	if(!$_POST[_OPTION_CHECK_UPDATE] == 'Y') { 
-		$gtfo_store_data = get_option(_DB_OPTION_NAME);
-		$byrev_gtfo_hotlink_post_data = unserialize($gtfo_store_data);
-	} else {
-		if (!isset($_POST[_OPTION_CHECK_RESET])) {
-			$byrev_gtfo_hotlink_post_data = $_POST[_PREFIX_FIELD];	
-			#~~~ sanitize
-			$byrev_gtfo_hotlink_post_data = array_map( 'esc_attr', $byrev_gtfo_hotlink_post_data );
+		if(!$_POST[_OPTION_CHECK_UPDATE] == 'Y') { 
+			$gtfo_store_data = get_option(_DB_OPTION_NAME);
+			$byrev_gtfo_hotlink_post_data = unserialize($gtfo_store_data);
 		} else {
-			// reset $byrev_gtfo_hotlink_post_data
+			if (!isset($_POST[_OPTION_CHECK_RESET])) {
+				$byrev_gtfo_hotlink_post_data = $_POST[_PREFIX_FIELD];	
+				#~~~ sanitize
+				$byrev_gtfo_hotlink_post_data = array_map( 'esc_attr', $byrev_gtfo_hotlink_post_data );
+			} else {
+				// reset $byrev_gtfo_hotlink_post_data
+			}
 		}
-	}
 
 	#~~~ version chcek
 	if (!isset($byrev_gtfo_hotlink_post_data['wp-picshield-version'])) {
@@ -86,174 +86,175 @@
 	endforeach;
 	
 	$byrev_hotlink_gtfo_copy = $byrev_hotlink_gtfo_default;
-		
-	if($_POST[_OPTION_CHECK_UPDATE] == 'Y') {
-		$gtfo_store_data = serialize($byrev_gtfo_hotlink_post_data);
-		update_option(_DB_OPTION_NAME, $gtfo_store_data); 
-		
-		echo '<br /><hr />';
-		
-		validate_byrev_gtfo_hotlink_raw_data($data_basic, $data_redir, $data_htaccess, $data_cleanfolder);
-		$data_basic['wp-picshield-version'] = _BYREV_WP_PICSHIELD;
+	if (isset($_POST[_OPTION_CHECK_UPDATE])){
+		if($_POST[_OPTION_CHECK_UPDATE] == 'Y') {
+			$gtfo_store_data = serialize($byrev_gtfo_hotlink_post_data);
+			update_option(_DB_OPTION_NAME, $gtfo_store_data); 
 			
-		if ($byrev_gtfo_hotlink_post_data['enable_hotlink_gtfo'] != 0) {			
-			#~~~~ write _GTFO_DEST_BASE_FILE_CODE to root
-			$_search = array(); $_replace=array();		
-			$php_code = file_get_contents(_GTFO_BASE_FILE_CODE);
-			foreach($data_basic as $key=>$value) :
-				$_search[] = '{'.$key.'}';
-				$_replace[] = $value;		
-			endforeach;		
-			$php_code = str_replace($_search, $_replace, $php_code);
-			$result1 = @file_put_contents(_GTFO_DEST_BASE_FILE_CODE, $php_code);
-			msg_info($result1, 'ERROR! File '._GTFO_DEST_BASE_FILE_CODE. ' not able to be copied.' , 'OK! File '._GTFO_DEST_BASE_FILE_CODE. ' was copied.');
+			echo '<br /><hr />';
 			
-			#~~~~ write _GTFO_DEST_REDIRECT_FILE_CODE to root
-			$_search = array(); $_replace=array();		
-			$php_code = file_get_contents(_GTFO_REDIRECT_FILE_CODE);
-			foreach($data_redir as $key=>$value) :
-				$_search[] = '{'.$key.'}';
-				$_replace[] = $value;		
-			endforeach;		
-			$php_code = str_replace($_search, $_replace, $php_code);
-			$result2 = @file_put_contents(_GTFO_DEST_REDIRECT_FILE_CODE, $php_code);
-			msg_info($result2, 'ERROR! File: '._GTFO_DEST_REDIRECT_FILE_CODE. ' not able to be copied.', 'OK! File '._GTFO_DEST_REDIRECT_FILE_CODE. ' was copied.');
+			validate_byrev_gtfo_hotlink_raw_data($data_basic, $data_redir, $data_htaccess, $data_cleanfolder);
+			$data_basic['wp-picshield-version'] = _BYREV_WP_PICSHIELD;
+				
+			if ($byrev_gtfo_hotlink_post_data['enable_hotlink_gtfo'] != 0) {			
+				#~~~~ write _GTFO_DEST_BASE_FILE_CODE to root
+				$_search = array(); $_replace=array();		
+				$php_code = file_get_contents(_GTFO_BASE_FILE_CODE);
+				foreach($data_basic as $key=>$value) :
+					$_search[] = '{'.$key.'}';
+					$_replace[] = $value;		
+				endforeach;		
+				$php_code = str_replace($_search, $_replace, $php_code);
+				$result1 = @file_put_contents(_GTFO_DEST_BASE_FILE_CODE, $php_code);
+				msg_info($result1, 'ERROR! File '._GTFO_DEST_BASE_FILE_CODE. ' not able to be copied.' , 'OK! File '._GTFO_DEST_BASE_FILE_CODE. ' was copied.');
+				
+				#~~~~ write _GTFO_DEST_REDIRECT_FILE_CODE to root
+				$_search = array(); $_replace=array();		
+				$php_code = file_get_contents(_GTFO_REDIRECT_FILE_CODE);
+				foreach($data_redir as $key=>$value) :
+					$_search[] = '{'.$key.'}';
+					$_replace[] = $value;		
+				endforeach;		
+				$php_code = str_replace($_search, $_replace, $php_code);
+				$result2 = @file_put_contents(_GTFO_DEST_REDIRECT_FILE_CODE, $php_code);
+				msg_info($result2, 'ERROR! File: '._GTFO_DEST_REDIRECT_FILE_CODE. ' not able to be copied.', 'OK! File '._GTFO_DEST_REDIRECT_FILE_CODE. ' was copied.');
+				
+				#~~~~ write _GTFO_DEST_CLEANFOLDER_FILE_CODE to plugin base folder
+				$_search = array(); $_replace=array();		
+				$php_code = file_get_contents(_GTFO_CLEANFOLDER_FILE_CODE);
+				foreach($data_cleanfolder as $key=>$value) :
+					$_search[] = '{'.$key.'}';
+					$_replace[] = $value;		
+				endforeach;		
+				$_search[] = "/* = */ die('GTFO'); /* = */";  #~~~ remove protection run
+				$_replace[] = "";
+				$php_code = str_replace($_search, $_replace, $php_code);
+				$result4 = @file_put_contents(_GTFO_DEST_CLEANFOLDER_FILE_CODE, $php_code);
+				msg_info($result4, 'ERROR! File: '._GTFO_DEST_CLEANFOLDER_FILE_CODE. ' not able to be copied.', 'OK! File '._GTFO_DEST_CLEANFOLDER_FILE_CODE. ' was copied.');
+				
+				#~~~~ write _DEFAULT_WATERMARK_FILE_PNG to root
+				if ($data_basic['watermark_png_file'] == _DEFAULT_WATERMARK_FILE_PNG) :
+					$result3 = copy(_GTFO_WATERMARK_FILE_PNG, _GTFO_DEST_WATERMARK_FILE_PNG);		
+					msg_info($result3, 'ERROR! File: '._GTFO_DEST_WATERMARK_FILE_PNG. ' not able to be copied.', 'OK! File '._GTFO_DEST_WATERMARK_FILE_PNG. ' was copied.');
+				else:
+					$result3 = true;
+				endif;
+				
+				$result = ($result1 AND $result2 AND $result3 AND $result4);
+				msg_info($result, 'FAIL: Can not proceed to the next step because of previous errors.','OK! First steps were executed successfully.');
 			
-			#~~~~ write _GTFO_DEST_CLEANFOLDER_FILE_CODE to plugin base folder
-			$_search = array(); $_replace=array();		
-			$php_code = file_get_contents(_GTFO_CLEANFOLDER_FILE_CODE);
-			foreach($data_cleanfolder as $key=>$value) :
-				$_search[] = '{'.$key.'}';
-				$_replace[] = $value;		
-			endforeach;		
-			$_search[] = "/* = */ die('GTFO'); /* = */";  #~~~ remove protection run
-			$_replace[] = "";
-			$php_code = str_replace($_search, $_replace, $php_code);
-			$result4 = @file_put_contents(_GTFO_DEST_CLEANFOLDER_FILE_CODE, $php_code);
-			msg_info($result4, 'ERROR! File: '._GTFO_DEST_CLEANFOLDER_FILE_CODE. ' not able to be copied.', 'OK! File '._GTFO_DEST_CLEANFOLDER_FILE_CODE. ' was copied.');
-			
-			#~~~~ write _DEFAULT_WATERMARK_FILE_PNG to root
-			if ($data_basic['watermark_png_file'] == _DEFAULT_WATERMARK_FILE_PNG) :
-				$result3 = copy(_GTFO_WATERMARK_FILE_PNG, _GTFO_DEST_WATERMARK_FILE_PNG);		
-				msg_info($result3, 'ERROR! File: '._GTFO_DEST_WATERMARK_FILE_PNG. ' not able to be copied.', 'OK! File '._GTFO_DEST_WATERMARK_FILE_PNG. ' was copied.');
-			else:
-				$result3 = true;
-			endif;
-			
-			$result = ($result1 AND $result2 AND $result3 AND $result4);
-			msg_info($result, 'FAIL: Can not proceed to the next step because of previous errors.','OK! First steps were executed successfully.');
-		
-			if (!$result) return; #~~~ error copy files !!!!!!
-			
-			#~~~~ prepare htacces
-			$_s1 = ($data_basic['x_frame_sameorgin']) ? "" : "# ";
-			
-			$htaccess['begin'] = array(
-				_HTACCES_SIGN_BEGIN,
-				$_s1.'Header always append X-Frame-Options SAMEORIGIN',
-				'<IfModule mod_rewrite.c>',
-				'RewriteEngine On',
-			);
-			
-			#~~~~ image extension
-			$images_extension = explode(' ', $byrev_gtfo_hotlink_post_data['images_extension']);
-			foreach ($images_extension as $index=>&$arr) $arr = trim($arr);
-			$images_extension = implode("|", $images_extension);		
-			$htaccess['images_extension'][] = 'RewriteCond %{REQUEST_URI} \.('.$images_extension.')$ [NC]';
-			
-			#~~~~ if redirection non-transparent: via header location!
-			if ($data_basic['watermark_pass_through'] == "false") : 				
-				$htaccess['exclude_cache'][] = 'RewriteCond %{REQUEST_URI} !'.$data_basic['hotlink_cache_folder'].' [NC]';
-			endif;			
-			
-			#~~~~ allowed self server ip
-			$server_ip = $_SERVER['SERVER_ADDR'];
-			$htaccess['remote_addr'][] = "RewriteCond %{REMOTE_ADDR} !^(127.0.0.1|".$server_ip.")$ [NC]";
-			
-			#~~~~ tumblr ips
-			if ($data_htaccess['allow_socials']) {
-				$htaccess['remote_addr'][] = "RewriteCond %{REMOTE_ADDR} !^66.6.(32|33|36|44|45|46|40). [NC]";
-			}
-			
-			#~~~~ allowed_ips
-			$allowed_remote_ip = explode("\n", $byrev_gtfo_hotlink_post_data['allowed_remote_ip']);
-			foreach ($allowed_remote_ip as $index=>&$arr) $arr = trim($arr);		
-			$allowed_remote_ip = array_filter($allowed_remote_ip, 'strlen' ); #~~ remove empty line				
-			$allowed_remote_ip = array_unique($allowed_remote_ip); #~~ remove duplicate
-			if (count($allowed_remote_ip)>0) {
-				$allowed_remote_ip = implode("|", $allowed_remote_ip);
-				$htaccess['remote_addr'][] = "RewriteCond %{REMOTE_ADDR} !^(".$allowed_remote_ip.")$ [NC]";
-			}			
-			
-			#~~~~ allowed_domains
-			$allowed_domains = explode("\n", $byrev_gtfo_hotlink_post_data['allowed_domains']);
-			foreach ($allowed_domains as $index=>&$arr) $arr = trim($arr);		
-			$allowed_domains = array_filter($allowed_domains, 'strlen' ); #~~ remove empty line				
-			#~ merge with online translators if enabled
-			if ($data_htaccess['online_translators']) {
-				$allowed_domains = array_merge($allowed_domains, $__ONLINE_TRANSLATORS);
-			}		
-			#~ merge with socials			
-			if ($data_htaccess['allow_socials']) {
-				$allowed_domains = array_merge($allowed_domains, $__SOCIAL_SHARE_REFERER);
-			}		
-			#~ merge with F***G google if exist! FORCED
-			$allowed_domains = array_merge($allowed_domains, $__GOGLE_TEST_REFERER);
-			
-			$allowed_domains = array_unique($allowed_domains); #~~ remove duplicate					
-			if (count($allowed_domains)>0) {
-				$allowed_domains = implode("|", $allowed_domains);
-				$htaccess['allowed_domains'][] = 'RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?('.$allowed_domains.') [NC]';
-			}
-			
-			#~~~~ user_agents
-			$allowed_user_agents = explode("\n", $byrev_gtfo_hotlink_post_data['allowed_user_agents']);
-			foreach ($allowed_user_agents as $index=>&$arr) $arr = trim($arr);		
-			$allowed_user_agents = array_filter($allowed_user_agents, 'strlen' ); #~~ remove empty line			
-			#~~~~ merge with socials			
-			if ($data_htaccess['allow_socials']) {
-				$allowed_user_agents = array_merge($allowed_user_agents, $__SOCIAL_SHARE_USER_AGENT);
-			}
+				if (!$result) return; #~~~ error copy files !!!!!!
+				
+				#~~~~ prepare htacces
+				$_s1 = ($data_basic['x_frame_sameorgin']) ? "" : "# ";
+				
+				$htaccess['begin'] = array(
+					_HTACCES_SIGN_BEGIN,
+					$_s1.'Header always append X-Frame-Options SAMEORIGIN',
+					'<IfModule mod_rewrite.c>',
+					'RewriteEngine On',
+				);
+				
+				#~~~~ image extension
+				$images_extension = explode(' ', $byrev_gtfo_hotlink_post_data['images_extension']);
+				foreach ($images_extension as $index=>&$arr) $arr = trim($arr);
+				$images_extension = implode("|", $images_extension);		
+				$htaccess['images_extension'][] = 'RewriteCond %{REQUEST_URI} \.('.$images_extension.')$ [NC]';
+				
+				#~~~~ if redirection non-transparent: via header location!
+				if ($data_basic['watermark_pass_through'] == "false") : 				
+					$htaccess['exclude_cache'][] = 'RewriteCond %{REQUEST_URI} !'.$data_basic['hotlink_cache_folder'].' [NC]';
+				endif;			
+				
+				#~~~~ allowed self server ip
+				$server_ip = $_SERVER['SERVER_ADDR'];
+				$htaccess['remote_addr'][] = "RewriteCond %{REMOTE_ADDR} !^(127.0.0.1|".$server_ip.")$ [NC]";
+				
+				#~~~~ tumblr ips
+				if ($data_htaccess['allow_socials']) {
+					$htaccess['remote_addr'][] = "RewriteCond %{REMOTE_ADDR} !^66.6.(32|33|36|44|45|46|40). [NC]";
+				}
+				
+				#~~~~ allowed_ips
+				$allowed_remote_ip = explode("\n", $byrev_gtfo_hotlink_post_data['allowed_remote_ip']);
+				foreach ($allowed_remote_ip as $index=>&$arr) $arr = trim($arr);		
+				$allowed_remote_ip = array_filter($allowed_remote_ip, 'strlen' ); #~~ remove empty line				
+				$allowed_remote_ip = array_unique($allowed_remote_ip); #~~ remove duplicate
+				if (count($allowed_remote_ip)>0) {
+					$allowed_remote_ip = implode("|", $allowed_remote_ip);
+					$htaccess['remote_addr'][] = "RewriteCond %{REMOTE_ADDR} !^(".$allowed_remote_ip.")$ [NC]";
+				}			
+				
+				#~~~~ allowed_domains
+				$allowed_domains = explode("\n", $byrev_gtfo_hotlink_post_data['allowed_domains']);
+				foreach ($allowed_domains as $index=>&$arr) $arr = trim($arr);		
+				$allowed_domains = array_filter($allowed_domains, 'strlen' ); #~~ remove empty line				
+				#~ merge with online translators if enabled
+				if ($data_htaccess['online_translators']) {
+					$allowed_domains = array_merge($allowed_domains, $__ONLINE_TRANSLATORS);
+				}		
+				#~ merge with socials			
+				if ($data_htaccess['allow_socials']) {
+					$allowed_domains = array_merge($allowed_domains, $__SOCIAL_SHARE_REFERER);
+				}		
+				#~ merge with F***G google if exist! FORCED
+				$allowed_domains = array_merge($allowed_domains, $__GOGLE_TEST_REFERER);
+				
+				$allowed_domains = array_unique($allowed_domains); #~~ remove duplicate					
+				if (count($allowed_domains)>0) {
+					$allowed_domains = implode("|", $allowed_domains);
+					$htaccess['allowed_domains'][] = 'RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?('.$allowed_domains.') [NC]';
+				}
+				
+				#~~~~ user_agents
+				$allowed_user_agents = explode("\n", $byrev_gtfo_hotlink_post_data['allowed_user_agents']);
+				foreach ($allowed_user_agents as $index=>&$arr) $arr = trim($arr);		
+				$allowed_user_agents = array_filter($allowed_user_agents, 'strlen' ); #~~ remove empty line			
+				#~~~~ merge with socials			
+				if ($data_htaccess['allow_socials']) {
+					$allowed_user_agents = array_merge($allowed_user_agents, $__SOCIAL_SHARE_USER_AGENT);
+				}
 
-			$allowed_user_agents = array_unique($allowed_user_agents); #~~ remove duplicate
-			
-			if (count($allowed_user_agents)>0) {
-				$allowed_user_agents = implode("|", $allowed_user_agents);		
-				$htaccess['allowed_user_agents'][] = 'RewriteCond %{HTTP_USER_AGENT} !('.$allowed_user_agents.') [NC]';
+				$allowed_user_agents = array_unique($allowed_user_agents); #~~ remove duplicate
+				
+				if (count($allowed_user_agents)>0) {
+					$allowed_user_agents = implode("|", $allowed_user_agents);		
+					$htaccess['allowed_user_agents'][] = 'RewriteCond %{HTTP_USER_AGENT} !('.$allowed_user_agents.') [NC]';
+				}
+
+				#~~~~ allow with known CDN ... future integrate in option; force to allow for the moment.
+				#$allowed_user_agents = array_merge($allowed_user_agents, $__KNOW_CDN_USER_AGENT);
+				if (count($__KNOW_CDN_USER_AGENT)>0) {
+					$allowed_cdn_user_agents = implode("|", $__KNOW_CDN_USER_AGENT);		
+					$htaccess['allowed_cdn_user_agents'][] = 'RewriteCond %{HTTP_USER_AGENT} !('.$allowed_cdn_user_agents.') [NC]';
+				}
+				
+				#F**G google worst and evil search-engine ever.
+				if (count($__GOOGLE_TEST_USER_AGENT)>0) {
+					$allowed_gtest_user_agents = implode("|", $__GOOGLE_TEST_USER_AGENT);		
+					$htaccess['allowed_gtest_user_agents'][] = 'RewriteCond %{HTTP_USER_AGENT} !('.$allowed_gtest_user_agents.') [NC]';
+				}			
+				
+
+				#~~~
+						
+				$htaccess['rewrite_rule'][] = 'RewriteRule (.*) byrev-wp-picshield.php?key='.$data_basic['gtfo_key'].'&src=$1 [L]';
+				
+				$htaccess['end'][] = '</IfModule>';
+				$htaccess['end'][] = _HTACCES_SIGN_END;
+				
+				$htaccess_data = "";		
+				foreach ($htaccess as $index=>&$rules) $htaccess_data .= implode(_CRLF, $rules)._CRLF;
+
+				$result4 = update_htaccess($htaccess_data);
+				msg_info($result4, 'ERROR! .htaccess file '._GTFO_DEST_BASE_FILE_CODE. ' not able to be updated.' , 'OK! .htacces file '._GTFO_DEST_BASE_FILE_CODE. ' was updated.');		
+			} else {
+				$result4 = update_htaccess(_HTACCES_SIGN_BEGIN._CRLF._HTACCES_SIGN_END);
+				msg_info(false, 'NOTE: Settings were saved, but the plugin is not active yet. Please set <b>Enable</b> from <b>Enable Hotlink Protection</b> option!' , '');			
 			}
-
-			#~~~~ allow with known CDN ... future integrate in option; force to allow for the moment.
-			#$allowed_user_agents = array_merge($allowed_user_agents, $__KNOW_CDN_USER_AGENT);
-			if (count($__KNOW_CDN_USER_AGENT)>0) {
-				$allowed_cdn_user_agents = implode("|", $__KNOW_CDN_USER_AGENT);		
-				$htaccess['allowed_cdn_user_agents'][] = 'RewriteCond %{HTTP_USER_AGENT} !('.$allowed_cdn_user_agents.') [NC]';
-			}
-			
-			#F**G google worst and evil search-engine ever.
-			if (count($__GOOGLE_TEST_USER_AGENT)>0) {
-				$allowed_gtest_user_agents = implode("|", $__GOOGLE_TEST_USER_AGENT);		
-				$htaccess['allowed_gtest_user_agents'][] = 'RewriteCond %{HTTP_USER_AGENT} !('.$allowed_gtest_user_agents.') [NC]';
-			}			
-			
-
-			#~~~
-					
-			$htaccess['rewrite_rule'][] = 'RewriteRule (.*) byrev-wp-picshield.php?key='.$data_basic['gtfo_key'].'&src=$1 [L]';
-			
-			$htaccess['end'][] = '</IfModule>';
-			$htaccess['end'][] = _HTACCES_SIGN_END;
-			
-			$htaccess_data = "";		
-			foreach ($htaccess as $index=>&$rules) $htaccess_data .= implode(_CRLF, $rules)._CRLF;
-
-			$result4 = update_htaccess($htaccess_data);
-			msg_info($result4, 'ERROR! .htaccess file '._GTFO_DEST_BASE_FILE_CODE. ' not able to be updated.' , 'OK! .htacces file '._GTFO_DEST_BASE_FILE_CODE. ' was updated.');		
-		} else {
-			$result4 = update_htaccess(_HTACCES_SIGN_BEGIN._CRLF._HTACCES_SIGN_END);
-			msg_info(false, 'NOTE: Settings were saved, but the plugin is not active yet. Please set <b>Enable</b> from <b>Enable Hotlink Protection</b> option!' , '');			
 		}
-    } 
-	
+	}
+ 
 	if (is_array($byrev_gtfo_hotlink_post_data)) {
 		foreach ($byrev_gtfo_hotlink_post_data as $data_name=>$post_data):
 			list($_value, $_name, $_info, $_input) = $byrev_hotlink_gtfo_copy[$data_name];
